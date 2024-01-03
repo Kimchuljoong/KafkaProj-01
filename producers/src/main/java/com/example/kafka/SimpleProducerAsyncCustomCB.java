@@ -1,16 +1,17 @@
 package com.example.kafka;
 
-import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
-public class SimpleProducerAsync {
+public class SimpleProducerAsyncCustomCB {
 
-    public static final Logger logger = LoggerFactory.getLogger(SimpleProducerAsync.class.getName());
+    public static final Logger logger = LoggerFactory.getLogger(SimpleProducerAsyncCustomCB.class.getName());
 
     public static void main(String[] args) {
 
@@ -25,15 +26,11 @@ public class SimpleProducerAsync {
 
         KafkaProducer<String, String> kafkaProducer = new KafkaProducer<String, String>(props);
 
-        ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topicName, "hello world");
+        for(int seq = 0; seq < 20; seq++) {
+            ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topicName, String.valueOf(seq),"hello world " + seq);
 
-        kafkaProducer.send(producerRecord, (metadata, e) -> {
-            if (e==null) {
-                System.out.println(metadata);
-            } else {
-                System.out.println("error");
-            }
-        });
+            kafkaProducer.send(producerRecord, new CustomCallback(seq));
+        }
 
         try {
             Thread.sleep(3000);

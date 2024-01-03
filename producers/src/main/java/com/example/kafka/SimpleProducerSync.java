@@ -14,7 +14,7 @@ import java.util.concurrent.Future;
 
 public class SimpleProducerSync {
 
-    public static final Logger logger = LoggerFactory.getLogger(SimpleProducerSync.class);
+    public static final Logger logger = LoggerFactory.getLogger(SimpleProducerSync.class.getName());
 
     public static void main(String[] args) {
 
