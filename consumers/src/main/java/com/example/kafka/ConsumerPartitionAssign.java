@@ -8,29 +8,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
-public class ConsumerCommit {
+public class ConsumerPartitionAssign {
 
-    public static final Logger logger = LoggerFactory.getLogger(ConsumerCommit.class.getName());
+    public static final Logger logger = LoggerFactory.getLogger(ConsumerPartitionAssign.class.getName());
 
     public static void main(String[] args) {
 
-        String topicName = "simple-topic";
+        String topicName = "pizza-topic";
 
         Properties props = new Properties();
         props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.56.101:9092");
         props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 //        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "group_01");
-        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "group_03");
-        props.setProperty(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "6000");
+        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "group_pizza_assign_seek");
         props.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 
         KafkaConsumer<String, String> kafkaConsumer = new KafkaConsumer<String, String>(props);
-        kafkaConsumer.subscribe(List.of(topicName));
+        TopicPartition topicPartition = new TopicPartition(topicName, 0);
+//        kafkaConsumer.subscribe(List.of(topicName));
+        kafkaConsumer.assign(List.of(topicPartition));
 
         Thread mainThread = Thread.currentThread();
 
@@ -50,7 +51,26 @@ public class ConsumerCommit {
 
 //        pollAutoCommit(kafkaConsumer);
 //        pollCommitSync(kafkaConsumer);
-        pollcommitAsync(kafkaConsumer);
+        pollNoCommit(kafkaConsumer);
+//        pollcommitAsync(kafkaConsumer);
+    }
+
+    private static void pollNoCommit(KafkaConsumer<String, String> kafkaConsumer) {
+        try {
+            while (true) {
+                ConsumerRecords<String, String> consumerRecords = kafkaConsumer.poll(Duration.ofMillis(1000L));
+                for (ConsumerRecord record : consumerRecords) {
+                    logger.info("record key: {}, record value: {} partition: {}",
+                            record.key(), record.value(), record.partition());
+                }
+            }
+        } catch (WakeupException e) {
+            logger.error("wakeup exception has been called");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+        } finally {
+            kafkaConsumer.close();
+        }
     }
 
     private static void pollcommitAsync(KafkaConsumer<String, String> kafkaConsumer) {
