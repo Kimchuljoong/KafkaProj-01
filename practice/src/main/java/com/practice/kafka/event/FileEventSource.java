@@ -51,6 +51,7 @@ public class FileEventSource implements Runnable {
         } catch (Exception e) {
             logger.error(e.getMessage());
         }
+        
     }
 
     private void readAppendAndSend() throws IOException, ExecutionException, InterruptedException {
