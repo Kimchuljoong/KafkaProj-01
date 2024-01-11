@@ -20,10 +20,9 @@ public class FileEventSource implements Runnable {
 
     private EventHandler eventHandler;
 
-    public FileEventSource(long updateInterval, File file, long filePointer, EventHandler eventHandler) {
+    public FileEventSource(long updateInterval, File file, EventHandler eventHandler) {
         this.updateInterval = updateInterval;
         this.file = file;
-        this.filePointer = filePointer;
         this.eventHandler = eventHandler;
     }
 
@@ -51,11 +50,35 @@ public class FileEventSource implements Runnable {
         } catch (Exception e) {
             logger.error(e.getMessage());
         }
-        
+
     }
 
     private void readAppendAndSend() throws IOException, ExecutionException, InterruptedException {
         RandomAccessFile raf = new RandomAccessFile(this.file, "r");
+        raf.seek(this.filePointer);
+        String line = null;
 
+        while ((line = raf.readLine()) != null) {
+            sendMessage(line);
+        }
+
+        this.filePointer = raf.getFilePointer();
+    }
+
+    private void sendMessage(String line) throws ExecutionException, InterruptedException {
+
+        String[] tokens = line.split(",");
+        String key = tokens[0];
+        StringBuffer value = new StringBuffer();
+
+        for (int i = 1; i < tokens.length; i++) {
+            value.append(tokens[i]);
+            if (i == tokens.length - 1) {
+                value.append(",");
+            }
+        }
+
+        MessageEvent messageEvent = new MessageEvent(key, value.toString());
+        this.eventHandler.onMessage(messageEvent);
     }
 }
